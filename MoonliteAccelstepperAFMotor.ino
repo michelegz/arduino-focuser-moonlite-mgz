@@ -22,7 +22,7 @@
 
 AF_Stepper motor1(200, 2);
 
-DHT11 dht11(22);
+DHT11 dht11(23);
 
 void forwardstep() {  
   motor1.onestep(BACKWARD, DOUBLE);
@@ -58,7 +58,9 @@ void setup()
   stepper.setAcceleration(10);
   stepper.enableOutputs();
   memset(line, 0, MAXCOMMAND);
+  dht11.readTemperature();
   millisLastMove = millis();
+  
 }
 
 
@@ -166,10 +168,10 @@ void loop(){
        int temperature = dht11.readTemperature();
 
         if (temperature != DHT11::ERROR_CHECKSUM && temperature != DHT11::ERROR_TIMEOUT) {
-            Serial.print(temperature + "#");
+            Serial.print(String(temperature) + "#");
         } else {
-            // Print error message based on the error code.
-            Serial.println("99#");
+            // error
+            Serial.println("66#");
         }
     }
 
