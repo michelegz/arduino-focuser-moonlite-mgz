@@ -13,14 +13,16 @@
 
 #include <AccelStepper.h>
 #include <AFMotor.h>
-
+#include <DHT11.h>
 
 // maximum speed is 160pps which should be OK for most
 // tin can steppers
 #define MAXSPEED 100
 #define SPEEDMULT 3
 
-AF_Stepper motor1(300, 1);
+AF_Stepper motor1(200, 2);
+
+DHT11 dht11(22);
 
 void forwardstep() {  
   motor1.onestep(BACKWARD, DOUBLE);
@@ -159,9 +161,16 @@ void loop(){
       Serial.print("#");
     }
 
-    // get the current temperature, hard-coded
+    // get the current temperature via DHT11
     if (!strcasecmp(cmd, "GT")) {
-      Serial.print("20#");
+       int temperature = dht11.readTemperature();
+
+        if (temperature != DHT11::ERROR_CHECKSUM && temperature != DHT11::ERROR_TIMEOUT) {
+            Serial.print(temperature + "#");
+        } else {
+            // Print error message based on the error code.
+            Serial.println("99#");
+        }
     }
 
     // get the temperature coefficient, hard-coded
@@ -239,7 +248,6 @@ long hexstr2long(char *line) {
   ret = strtol(line, NULL, 16);
   return (ret);
 }
-
 
 
 
