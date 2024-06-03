@@ -241,8 +241,17 @@ void loop(){
       stepper.setMaxSpeed(speed * SPEEDMULT);
     
     }
+      //set half step mode
+      if (!strcasecmp(cmd, "SH")) {
+        halfstep = true;
+    }
 
-    // whether half-step is enabled or not, always return "00"
+    //set full step mode
+      if (!strcasecmp(cmd, "SF")) {
+        halfstep = false;
+    }
+    
+    // return half step mode
     if (!strcasecmp(cmd, "GH")) {
       if (halfstep) {
       Serial.print("FF#"); 
