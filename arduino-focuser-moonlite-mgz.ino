@@ -2,27 +2,48 @@
 //
 // Uses AccelStepper (http://www.airspayce.com/mikem/arduino/AccelStepper/)
 // Uses AFMotor and the Adafruit v1.2 Motor Shield https://learn.adafruit.com/adafruit-motor-shield
+// Uses MicStep for generic H-Bridge stepper driver
 //
 // Requires a 10uf - 100uf capacitor between RESET and GND on the motor shield; this prevents the
 // Arduino from resetting on connect (via DTR going low).  Without the capacitor, this sketch works
 // with the stand-alone Moonlite control program (non-ASCOM) but the ASCOM driver does not detect it.
 // Adding the capacitor allows the Arduino to respond quickly enough to the ASCOM driver probe
 //
-// orly.andico@gmail.com, 13 April 2014
+// Author: michele.gz@gmail.com
+// Based on original work by orly.andico@gmail.com
 
+#ifdef MOTORSHIELD
+#include <AFMotor.h>
+#endif
+
+#ifdef HBRIDGE
+#include <MicStep.h>
+#endif
 
 #include <AccelStepper.h>
-#include <AFMotor.h>
+
+#ifdef DHT11
 #include <DHT11.h>
+#endif
 
 // maximum speed is 160pps which should be OK for most
 // tin can steppers
+
+//choose main configuration between MOTORSHIELD or HBRIDGE
+#define MOTORSHIELD
+//#define HBRIDGE
+
+#define DHT11
+
 #define MAXSPEED 100
 #define SPEEDMULT 3
+#define MOTOR_STEPS 200
+#define MOTOR_SHIELD_NUMBER 2
+#define DHT11_PIN 23
 
-AF_Stepper motor1(200, 2);
+AF_Stepper motor1(MOTOR_STEPS, MOTOR_SHIELD_NUMBER);
 
-DHT11 dht11(23);
+DHT11 dht11(DHT11_PIN);
 
 void forwardstep() {  
   motor1.onestep(BACKWARD, DOUBLE);
