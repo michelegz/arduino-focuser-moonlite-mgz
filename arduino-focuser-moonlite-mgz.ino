@@ -30,10 +30,11 @@
 #define DHT11
 #define DHT11_PIN 23
 
-#define MAXSPEED 100
-#define SPEEDMULT 3
+#define MAXSPEED 100 //must be 20*SPEEDMULT
+#define SPEEDMULT 5
+#define ACCELERATION 10
 
-
+#define MAXCOMMAND 8
 
 #ifdef MOTORSHIELD
 #include <AFMotor.h>
@@ -51,7 +52,6 @@ Stepper motor(HBRDIGE_MOTORPIN1,HBRDIGE_MOTORPIN2,HBRDIGE_MOTORPIN3,HBRDIGE_MOTO
 #include <DHT11.h>
 DHT11 dht11(DHT11_PIN);
 #endif
-
 
 void forwardstep() {  
   #ifdef MOTORSHIELD
@@ -75,8 +75,6 @@ void backwardstep() {
 
 AccelStepper stepper(forwardstep, backwardstep);
 
-#define MAXCOMMAND 8
-
 char inChar;
 char cmd[MAXCOMMAND];
 char param[MAXCOMMAND];
@@ -87,6 +85,7 @@ int speed = 32;
 int eoc = 0;
 int idx = 0;
 long millisLastMove = 0;
+bool halfstep = false;
 
 void setup()
 {  
@@ -96,7 +95,7 @@ void setup()
   // ramping, making variable speeds un-necessary
   stepper.setSpeed(MAXSPEED);
   stepper.setMaxSpeed(MAXSPEED);
-  stepper.setAcceleration(10);
+  stepper.setAcceleration(ACCELERATION);
   stepper.enableOutputs();
   memset(line, 0, MAXCOMMAND);
   dht11.readTemperature();
@@ -206,6 +205,8 @@ void loop(){
 
     // get the current temperature via DHT11
     if (!strcasecmp(cmd, "GT")) {
+
+      #ifdef DHT11
        int temperature = dht11.readTemperature();
 
         if (temperature != DHT11::ERROR_CHECKSUM && temperature != DHT11::ERROR_TIMEOUT) {
@@ -214,6 +215,9 @@ void loop(){
             // error
             Serial.println("66#");
         }
+      #else
+            Serial.println("0#");
+      #endif
     }
 
     // get the temperature coefficient, hard-coded
@@ -233,18 +237,19 @@ void loop(){
     if (!strcasecmp(cmd, "SD")) {
       speed = hexstr2long(param);
 
-      // we ignore the Moonlite speed setting because Accelstepper implements
-      // ramping, making variable speeds un-necessary
-
-      // stepper.setSpeed(speed * SPEEDMULT);
-      // stepper.setMaxSpeed(speed * SPEEDMULT);
-      stepper.setSpeed(MAXSPEED);
-      stepper.setMaxSpeed(MAXSPEED);
+      stepper.setSpeed(speed * SPEEDMULT);
+      stepper.setMaxSpeed(speed * SPEEDMULT);
+    
     }
 
     // whether half-step is enabled or not, always return "00"
     if (!strcasecmp(cmd, "GH")) {
-      Serial.print("00#");
+      if (halfstep) {
+      Serial.print("FF#"); 
+      }
+      else {
+        Serial.print("00#");
+      }
     }
 
     // motor is moving - 01 if moving, 00 otherwise
@@ -268,7 +273,6 @@ void loop(){
       pos = hexstr2long(param);
       stepper.moveTo(pos);
     }
-
 
     // initiate a move
     if (!strcasecmp(cmd, "FG")) {
