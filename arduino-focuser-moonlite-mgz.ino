@@ -42,6 +42,7 @@ AF_Stepper motor(MOTORSHIELD_STEPS, MOTORSHIELD_NUMBER);
 
 #ifdef HBRIDGE
 #include <MicStep.h>
+Stepper motor(HBRDIGE_MOTORPIN1,HBRDIGE_MOTORPIN2,HBRDIGE_MOTORPIN3,HBRDIGE_MOTORPIN4,HBRDIGE_PWMPIN_A,HBRDIGE_PWMPIN_B,HBRDIGE_POWERFACTOR);
 #endif
 
 #include <AccelStepper.h>
@@ -53,11 +54,23 @@ DHT11 dht11(DHT11_PIN);
 
 
 void forwardstep() {  
-  motor1.onestep(BACKWARD, DOUBLE);
+  #ifdef MOTORSHIELD
+  motor.onestep(FORWARD, DOUBLE);
+  #endif
+  
+  #ifdef HBRIDGE
+  motor.step(FORWARD, DOUBLE, 0);
+  #endif
 }
 
 void backwardstep() {  
-  motor1.onestep(FORWARD, DOUBLE);
+  #ifdef MOTORSHIELD
+  motor.onestep(BACKWARD, DOUBLE);
+  #endif
+  
+  #ifdef HBRIDGE
+  motor.step(BACKWARD, DOUBLE, 0);
+  #endif
 }
 
 AccelStepper stepper(forwardstep, backwardstep);
