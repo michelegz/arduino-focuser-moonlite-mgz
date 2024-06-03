@@ -1,8 +1,4 @@
-# arduino-focuser-moonlite
+Based on original work by Orlando Andico.
 
-This is an implementation of a focuser for the Feathertouch MSM20 
-bipolar stepper motor, driven with an AdaFruit v1 motor shield or clone.
-
-Blog post here - http://orlygoingthirty.blogspot.sg/2014/04/arduino-based-motor-focuser-controller.html
-
-
+WORK IN PROGRESS
+This Arduino sketch has been modified to work with both classic L293D Motor Shield V1 and generic H-Bridge stepper driver with my custom MicStep library
