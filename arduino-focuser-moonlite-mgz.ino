@@ -12,8 +12,32 @@
 // Author: michele.gz@gmail.com
 // Based on original work by orly.andico@gmail.com
 
+//choose main configuration between MOTORSHIELD or HBRIDGE
+#define MOTORSHIELD
+#define MOTORSHIELD_STEPS 200
+#define MOTORSHIELD_NUMBER 2
+
+//#define HBRIDGE
+//#define HBRDIGE_MOTORPIN1 5
+//#define HBRDIGE_MOTORPIN2 6
+//#define HBRDIGE_MOTORPIN3 7
+//#define HBRDIGE_MOTORPIN4 8
+//#define HBRDIGE_PWMPIN_A 9
+//#define HBRDIGE_PWMPIN_B 10
+//#define HBRDIGE_POWERFACTOR 1
+
+//use DHT11 temp sensor
+#define DHT11
+#define DHT11_PIN 23
+
+#define MAXSPEED 100
+#define SPEEDMULT 3
+
+
+
 #ifdef MOTORSHIELD
 #include <AFMotor.h>
+AF_Stepper motor(MOTORSHIELD_STEPS, MOTORSHIELD_NUMBER);
 #endif
 
 #ifdef HBRIDGE
@@ -24,26 +48,9 @@
 
 #ifdef DHT11
 #include <DHT11.h>
+DHT11 dht11(DHT11_PIN);
 #endif
 
-// maximum speed is 160pps which should be OK for most
-// tin can steppers
-
-//choose main configuration between MOTORSHIELD or HBRIDGE
-#define MOTORSHIELD
-//#define HBRIDGE
-
-#define DHT11
-
-#define MAXSPEED 100
-#define SPEEDMULT 3
-#define MOTOR_STEPS 200
-#define MOTOR_SHIELD_NUMBER 2
-#define DHT11_PIN 23
-
-AF_Stepper motor1(MOTOR_STEPS, MOTOR_SHIELD_NUMBER);
-
-DHT11 dht11(DHT11_PIN);
 
 void forwardstep() {  
   motor1.onestep(BACKWARD, DOUBLE);
