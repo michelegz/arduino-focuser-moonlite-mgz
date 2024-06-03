@@ -55,11 +55,15 @@ DHT11 dht11(DHT11_PIN);
 
 void forwardstep() {  
   #ifdef MOTORSHIELD
+  if (!halfstep) 
   motor.onestep(FORWARD, DOUBLE);
+  else motor.onestep(FORWARD, INTERLEAVE);
   #endif
   
   #ifdef HBRIDGE
+  if (!halfstep) 
   motor.step(FORWARD, DOUBLE, 0);
+  else motor.step(FORWARD, INTERLEAVE, 0);
   #endif
 }
 
