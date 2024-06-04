@@ -25,33 +25,7 @@
 // BEGIN CONFIGURATION
 //-------------------------------------------------------
 
-//choose main configuration between Adafruit compatible v1 MOTORSHIELD or generic HBRIDGE
-//#define MOTORSHIELD
-//#define MOTORSHIELD_STEPS 200
-//#define MOTORSHIELD_NUMBER 2
-
-#define HBRIDGE
-#define HBRDIGE_MOTORPIN1 5
-#define HBRDIGE_MOTORPIN2 6
-#define HBRDIGE_MOTORPIN3 7
-#define HBRDIGE_MOTORPIN4 8
-
-//optional PWM for HBRIDGE
-//#define HBRDIGE_PWM_ENABLED
-//#define HBRDIGE_PWMPIN_A 9
-//#define HBRDIGE_PWMPIN_B 10
-//#define HBRDIGE_POWERFACTOR 1
-
-//use DHT11 temp sensor
-#define DHT11_PRESENT
-#define DHT11_PIN 2
-
-//MAXSPEED limits the maximumum speed, I suggest you to set this to 20*SPEEDMULT once you found the right SPEEDMULT by trial
-#define MAXSPEED 100
-//selectable speeds will be SPEEDMULT* 02, 04, 08, 10, 20
-#define SPEEDMULT 5
-#define ACCELERATION 10
-#define MOTOR_RELEASE_TIMEOUT 15000
+#include "config.h"
 
 //------------------------------------------------------------------
 // END CONFIGURATION
@@ -85,9 +59,9 @@ char inChar;
 char cmd[MAXCOMMAND];
 char param[MAXCOMMAND];
 char line[MAXCOMMAND];
-long pos;
+long pos = HOME_POSITION;
 int isRunning = 0;
-int speed = 20;
+int speed = DEFAULT_SPEED;
 int eoc = 0;
 int idx = 0;
 long millisLastMove = 0;
@@ -132,8 +106,14 @@ void setup()
   stepper.setMaxSpeed(MAXSPEED);
   stepper.setAcceleration(ACCELERATION);
   stepper.enableOutputs();
+  stepper.setCurrentPosition(HOME_POSITION);
+
   memset(line, 0, MAXCOMMAND);
-  dht11.readTemperature();
+  
+  #ifdef DHT11_PRESENT
+    dht11.readTemperature();
+  #endif
+
   millisLastMove = millis();
   
 }
@@ -208,8 +188,10 @@ void loop(){
 
     // home the motor, hard-coded, ignore parameters since we only have one motor
     if (!strcasecmp(cmd, "PH")) { 
-      stepper.setCurrentPosition(8000);
-      stepper.moveTo(0);
+      
+      pos=HOME_POSITION;
+      stepper.setCurrentPosition(HOME_POSITION);
+
       isRunning = 1;
     }
 
@@ -239,7 +221,7 @@ void loop(){
     // get the current temperature via DHT11
     if (!strcasecmp(cmd, "GT")) {
 
-      #ifdef DHT11
+      #ifdef DHT11_PRESENT
 
        char tempString[6];
        int temperature = dht11.readTemperature();
@@ -247,13 +229,14 @@ void loop(){
        sprintf(tempString, "%04X", temperature);
 
         if (temperature != DHT11::ERROR_CHECKSUM && temperature != DHT11::ERROR_TIMEOUT) {
-            Serial.print(String(tempString) + "#");
+            Serial.print(tempString);
+            Serial.print("#");
         } else {
             // error
-            Serial.println("0000#");
+            Serial.print("0000#");
         }
       #else
-            Serial.println("0000#");
+            Serial.print("0000#");
       #endif
     }
 
@@ -310,12 +293,16 @@ void loop(){
     // set current motor position
     if (!strcasecmp(cmd, "SP")) {
       pos = hexstr2long(param);
+
+      if(pos==0) pos=HOME_POSITION;
+
       stepper.setCurrentPosition(pos);
     }
 
     // set new motor position
     if (!strcasecmp(cmd, "SN")) {
       pos = hexstr2long(param);
+      if(pos==0) pos=HOME_POSITION;
       stepper.moveTo(pos);
     }
 
