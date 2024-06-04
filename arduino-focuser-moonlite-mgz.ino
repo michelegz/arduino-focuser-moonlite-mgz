@@ -22,17 +22,17 @@
 
 
 //-------------------------------------------------------
-// BEGIN CONFIGURATION
+// CONFIGURATION IS INCLUDED IN EXTERNAL FILE
 //-------------------------------------------------------
 
 #include "config.h"
 
 //------------------------------------------------------------------
-// END CONFIGURATION
 // Don't edit below this line unless you know what you are doing
 //-------------------------------------------------------------------
 
 #define MAXCOMMAND 8
+#define READ_TEMP_INTERVAL 60000
 
 #ifdef MOTORSHIELD
   #include <AFMotor.h>
@@ -65,7 +65,10 @@ int speed = DEFAULT_SPEED;
 int eoc = 0;
 int idx = 0;
 long millisLastMove = 0;
+long millisLastTemp = 0;
 bool halfstep = false;
+int temperature = 0;
+const int temp_offset = TEMP_OFFSET;
 
 void forwardstep() {  
   #ifdef MOTORSHIELD
@@ -111,7 +114,8 @@ void setup()
   memset(line, 0, MAXCOMMAND);
   
   #ifdef DHT11_PRESENT
-    dht11.readTemperature();
+    temperature = dht11.readTemperature();
+    millisLastTemp = millis();
   #endif
 
   millisLastMove = millis();
@@ -134,10 +138,18 @@ void loop(){
         stepper.disableOutputs();
         motor.release();
       }
+
+        #ifdef DHT11_PRESENT
+        if ((millis() - millisLastTemp) > READ_TEMP_INTERVAL) {
+          temperature = dht11.readTemperature() + temp_offset;
+          millisLastTemp = millis();
+        }
+        #endif
+
     }
 
     if (stepper.distanceToGo() == 0) {
-      stepper.run();
+      //stepper.run();
       isRunning = 0;
     }
   } 
@@ -218,13 +230,12 @@ void loop(){
       Serial.print("#");
     }
 
-    // get the current temperature via DHT11
+    // get the last temperature read
     if (!strcasecmp(cmd, "GT")) {
 
       #ifdef DHT11_PRESENT
 
        char tempString[6];
-       int temperature = dht11.readTemperature();
 
        sprintf(tempString, "%04X", temperature);
 

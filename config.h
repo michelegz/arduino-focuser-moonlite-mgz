@@ -16,8 +16,9 @@
 //#define HBRDIGE_POWERFACTOR 1
 
 //use DHT11 temp sensor
-//#define DHT11_PRESENT
+#define DHT11_PRESENT
 #define DHT11_PIN 2
+#define TEMP_OFFSET 0
 
 //MAXSPEED limits the maximumum speed, I suggest you to set this to 20*SPEEDMULT once you found the right SPEEDMULT by trial
 #define MAXSPEED 100
