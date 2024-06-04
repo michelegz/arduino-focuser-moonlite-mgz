@@ -1,93 +1,85 @@
 // Moonlite-compatible stepper controller
 //
+// Author: michele.gz@gmail.com
+// Based on original work by orly.andico@gmail.com
+//
+// Main enhanchments from original version:
+// - possibility to choose between Motorshield v1 and generic H-Bridge motor
+// - half step implementation
+// - DHT11 temperature support
+// - speed selection from Moonlite GUI
+//
 // Uses AccelStepper (http://www.airspayce.com/mikem/arduino/AccelStepper/)
 // Uses AFMotor and the Adafruit v1.2 Motor Shield https://learn.adafruit.com/adafruit-motor-shield
-// Uses MicStep for generic H-Bridge stepper driver
+// Uses my custom MicStep library for generic H-Bridge stepper driver
 //
+// Original note by Orly (untested):
 // Requires a 10uf - 100uf capacitor between RESET and GND on the motor shield; this prevents the
 // Arduino from resetting on connect (via DTR going low).  Without the capacitor, this sketch works
 // with the stand-alone Moonlite control program (non-ASCOM) but the ASCOM driver does not detect it.
 // Adding the capacitor allows the Arduino to respond quickly enough to the ASCOM driver probe
 //
-// Author: michele.gz@gmail.com
-// Based on original work by orly.andico@gmail.com
+
 
 //-------------------------------------------------------
 // BEGIN CONFIGURATION
 //-------------------------------------------------------
 
-//choose main configuration between MOTORSHIELD or HBRIDGE
-#define MOTORSHIELD
-#define MOTORSHIELD_STEPS 200
-#define MOTORSHIELD_NUMBER 2
+//choose main configuration between Adafruit compatible v1 MOTORSHIELD or generic HBRIDGE
+//#define MOTORSHIELD
+//#define MOTORSHIELD_STEPS 200
+//#define MOTORSHIELD_NUMBER 2
 
-//#define HBRIDGE
-//#define HBRDIGE_MOTORPIN1 5
-//#define HBRDIGE_MOTORPIN2 6
-//#define HBRDIGE_MOTORPIN3 7
-//#define HBRDIGE_MOTORPIN4 8
+#define HBRIDGE
+#define HBRDIGE_MOTORPIN1 5
+#define HBRDIGE_MOTORPIN2 6
+#define HBRDIGE_MOTORPIN3 7
+#define HBRDIGE_MOTORPIN4 8
+
+//optional PWM for HBRIDGE
+//#define HBRDIGE_PWM_ENABLED
 //#define HBRDIGE_PWMPIN_A 9
 //#define HBRDIGE_PWMPIN_B 10
 //#define HBRDIGE_POWERFACTOR 1
 
 //use DHT11 temp sensor
-#define DHT11
-#define DHT11_PIN 23
+#define DHT11_PRESENT
+#define DHT11_PIN 2
 
-//MAXSPEED must be 20*SPEEDMULT
+//MAXSPEED limits the maximumum speed, I suggest you to set this to 20*SPEEDMULT once you found the right SPEEDMULT by trial
 #define MAXSPEED 100
-//speed will be SPEEDMULT* 02, 04, 08, 10, 20
+//selectable speeds will be SPEEDMULT* 02, 04, 08, 10, 20
 #define SPEEDMULT 5
 #define ACCELERATION 10
+#define MOTOR_RELEASE_TIMEOUT 15000
 
-//-------------------------------------------------------
+//------------------------------------------------------------------
 // END CONFIGURATION
-//-------------------------------------------------------
+// Don't edit below this line unless you know what you are doing
+//-------------------------------------------------------------------
 
 #define MAXCOMMAND 8
 
 #ifdef MOTORSHIELD
-#include <AFMotor.h>
-AF_Stepper motor(MOTORSHIELD_STEPS, MOTORSHIELD_NUMBER);
+  #include <AFMotor.h>
+  AF_Stepper motor(MOTORSHIELD_STEPS, MOTORSHIELD_NUMBER);
 #endif
 
 #ifdef HBRIDGE
-#include <MicStep.h>
-Stepper motor(HBRDIGE_MOTORPIN1,HBRDIGE_MOTORPIN2,HBRDIGE_MOTORPIN3,HBRDIGE_MOTORPIN4,HBRDIGE_PWMPIN_A,HBRDIGE_PWMPIN_B,HBRDIGE_POWERFACTOR);
+  #include "C:\Users\Michele Guzzini\Documents\GitHub\MicStep\MicStep.h"
+  #ifdef HBRDIGE_PWM_ENABLED
+    Stepper motor(HBRDIGE_MOTORPIN1,HBRDIGE_MOTORPIN2,HBRDIGE_MOTORPIN3,HBRDIGE_MOTORPIN4,HBRDIGE_PWMPIN_A,HBRDIGE_PWMPIN_B,HBRDIGE_POWERFACTOR);
+  #else
+    Stepper motor(HBRDIGE_MOTORPIN1,HBRDIGE_MOTORPIN2,HBRDIGE_MOTORPIN3,HBRDIGE_MOTORPIN4);
+  #endif
 #endif
 
 #include <AccelStepper.h>
 
-#ifdef DHT11
-#include <DHT11.h>
-DHT11 dht11(DHT11_PIN);
+#ifdef DHT11_PRESENT
+  #include <DHT11.h>
+  DHT11 dht11(DHT11_PIN);
 #endif
-
-void forwardstep() {  
-  #ifdef MOTORSHIELD
-  if (!halfstep) 
-  motor.onestep(FORWARD, DOUBLE);
-  else motor.onestep(FORWARD, INTERLEAVE);
-  #endif
-  
-  #ifdef HBRIDGE
-  if (!halfstep) 
-  motor.step(FORWARD, DOUBLE, 0);
-  else motor.step(FORWARD, INTERLEAVE, 0);
-  #endif
-}
-
-void backwardstep() {  
-  #ifdef MOTORSHIELD
-  motor.onestep(BACKWARD, DOUBLE);
-  #endif
-  
-  #ifdef HBRIDGE
-  motor.step(BACKWARD, DOUBLE, 0);
-  #endif
-}
-
-AccelStepper stepper(forwardstep, backwardstep);
 
 char inChar;
 char cmd[MAXCOMMAND];
@@ -95,19 +87,48 @@ char param[MAXCOMMAND];
 char line[MAXCOMMAND];
 long pos;
 int isRunning = 0;
-int speed = 32;
+int speed = 20;
 int eoc = 0;
 int idx = 0;
 long millisLastMove = 0;
 bool halfstep = false;
 
+void forwardstep() {  
+  #ifdef MOTORSHIELD
+    if (!halfstep) 
+      motor.onestep(FORWARD, DOUBLE);
+    else motor.onestep(FORWARD, INTERLEAVE);
+  #endif
+  
+  #ifdef HBRIDGE
+    if (!halfstep) 
+      motor.step(FORWARD, DOUBLE);
+    else motor.step(FORWARD, INTERLEAVE);
+  #endif
+}
+
+void backwardstep() {  
+  #ifdef MOTORSHIELD
+    if (!halfstep) 
+      motor.onestep(BACKWARD, DOUBLE);
+    else motor.onestep(BACKWARD, INTERLEAVE);
+  #endif
+  
+  #ifdef HBRIDGE
+    if (!halfstep) 
+      motor.step(BACKWARD, DOUBLE);
+    else motor.step(BACKWARD, INTERLEAVE);
+  #endif
+}
+
+AccelStepper stepper(forwardstep, backwardstep);
+
+
 void setup()
 {  
   Serial.begin(9600);
 
-  // we ignore the Moonlite speed setting because Accelstepper implements
-  // ramping, making variable speeds un-necessary
-  stepper.setSpeed(MAXSPEED);
+  stepper.setSpeed(speed*SPEEDMULT);
   stepper.setMaxSpeed(MAXSPEED);
   stepper.setAcceleration(ACCELERATION);
   stepper.enableOutputs();
@@ -116,8 +137,6 @@ void setup()
   millisLastMove = millis();
   
 }
-
-
 
 void loop(){
   // run the stepper if there's no pending command and if there are pending movements
@@ -131,9 +150,9 @@ void loop(){
       // reported on INDI forum that some steppers "stutter" if disableOutputs is done repeatedly
       // over a short interval; hence we only disable the outputs and release the motor some seconds
       // after movement has stopped
-      if ((millis() - millisLastMove) > 15000) {
+      if ((millis() - millisLastMove) > MOTOR_RELEASE_TIMEOUT) {
         stepper.disableOutputs();
-        motor1.release();
+        motor.release();
       }
     }
 
@@ -221,16 +240,20 @@ void loop(){
     if (!strcasecmp(cmd, "GT")) {
 
       #ifdef DHT11
+
+       char tempString[6];
        int temperature = dht11.readTemperature();
 
+       sprintf(tempString, "%04X", temperature);
+
         if (temperature != DHT11::ERROR_CHECKSUM && temperature != DHT11::ERROR_TIMEOUT) {
-            Serial.print(String(temperature) + "#");
+            Serial.print(String(tempString) + "#");
         } else {
             // error
-            Serial.println("66#");
+            Serial.println("0000#");
         }
       #else
-            Serial.println("0#");
+            Serial.println("0000#");
       #endif
     }
 
@@ -252,7 +275,6 @@ void loop(){
       speed = hexstr2long(param);
 
       stepper.setSpeed(speed * SPEEDMULT);
-      stepper.setMaxSpeed(speed * SPEEDMULT);
     
     }
       //set half step mode
