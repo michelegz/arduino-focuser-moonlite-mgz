@@ -66,7 +66,7 @@
 #endif
 
 #ifdef HBRIDGE
-  #include "C:\Users\Michele Guzzini\Documents\GitHub\MicStep\MicStep.h"
+  #include "MicStep.h"
   #ifdef HBRDIGE_PWM_ENABLED
     Stepper motor(HBRDIGE_MOTORPIN1,HBRDIGE_MOTORPIN2,HBRDIGE_MOTORPIN3,HBRDIGE_MOTORPIN4,HBRDIGE_PWMPIN_A,HBRDIGE_PWMPIN_B,HBRDIGE_POWERFACTOR);
   #else
