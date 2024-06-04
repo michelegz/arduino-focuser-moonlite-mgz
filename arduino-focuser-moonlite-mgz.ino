@@ -12,6 +12,10 @@
 // Author: michele.gz@gmail.com
 // Based on original work by orly.andico@gmail.com
 
+//-------------------------------------------------------
+// BEGIN CONFIGURATION
+//-------------------------------------------------------
+
 //choose main configuration between MOTORSHIELD or HBRIDGE
 #define MOTORSHIELD
 #define MOTORSHIELD_STEPS 200
@@ -30,9 +34,15 @@
 #define DHT11
 #define DHT11_PIN 23
 
-#define MAXSPEED 100 //must be 20*SPEEDMULT
+//MAXSPEED must be 20*SPEEDMULT
+#define MAXSPEED 100
+//speed will be SPEEDMULT* 02, 04, 08, 10, 20
 #define SPEEDMULT 5
 #define ACCELERATION 10
+
+//-------------------------------------------------------
+// END CONFIGURATION
+//-------------------------------------------------------
 
 #define MAXCOMMAND 8
 
