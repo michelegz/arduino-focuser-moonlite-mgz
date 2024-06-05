@@ -139,6 +139,7 @@ void loop(){
         motor.release();
       }
 
+        // DHT11 temp reading is very slow so we read it during idle time instead of reading it on serial request
         #ifdef DHT11_PRESENT
         if ((millis() - millisLastTemp) > READ_TEMP_INTERVAL) {
           temperature = dht11.readTemperature() + temp_offset;
