@@ -237,7 +237,7 @@ void loop(){
 
        char tempString[6];
 
-       sprintf(tempString, "%04X", temperature);
+       sprintf(tempString, "%04X", temperature*2); //must be multplied by 2 to be compliant with Moonlite protocol
 
         if (temperature != DHT11::ERROR_CHECKSUM && temperature != DHT11::ERROR_TIMEOUT) {
             Serial.print(tempString);
