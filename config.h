@@ -20,11 +20,11 @@
 #define DHT11_PIN 2
 #define TEMP_OFFSET 0
 
-//MAXSPEED limits the maximumum speed, I suggest you to set this to 20*SPEEDMULT once you found the right SPEEDMULT by trial
-#define MAXSPEED 100
-//selectable speeds will be SPEEDMULT* 02, 04, 08, 10, 20
-#define SPEEDMULT 5
-#define DEFAULT_SPEED 10
-#define ACCELERATION 20
-#define MOTOR_RELEASE_TIMEOUT 30000
+//MAXSPEED limits the maximumum speed
+#define MAX_STEPPER_SPEED 200
+#define DEFAULT_STEPPER_SPEED 100
+//selectable speeds will be STEPPER_SPEED*speedFactor()
+#define ACCELERATION 50
+#define MOTOR_RELEASE_TIMEOUT 1000
 #define HOME_POSITION 32000
+#define HALFSTEP false

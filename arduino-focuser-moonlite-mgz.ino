@@ -3,17 +3,20 @@
 // Author: michele.gz@gmail.com
 // Based on original work by orly.andico@gmail.com
 //
+// THIS PROJECT IS STILL IN EXPERIMENTAL STAGE, NOT ALL FEATURES HAS BEEN TESTED
+//
 // Main enhanchments from original version:
 // - possibility to choose between Motorshield v1 and generic H-Bridge motor
 // - half step implementation
 // - DHT11 temperature support
 // - speed selection from Moonlite GUI
 //
+//
 // Uses AccelStepper (http://www.airspayce.com/mikem/arduino/AccelStepper/)
 // Uses AFMotor and the Adafruit v1.2 Motor Shield https://learn.adafruit.com/adafruit-motor-shield
 // Uses my custom MicStep library for generic H-Bridge stepper driver
 //
-// Original note by Orly (untested):
+// Original note by Orly:
 // Requires a 10uf - 100uf capacitor between RESET and GND on the motor shield; this prevents the
 // Arduino from resetting on connect (via DTR going low).  Without the capacitor, this sketch works
 // with the stand-alone Moonlite control program (non-ASCOM) but the ASCOM driver does not detect it.
@@ -33,6 +36,19 @@
 
 #define MAXCOMMAND 8
 #define READ_TEMP_INTERVAL 60000
+
+/*
+---- From Moonlight documentation about speed selection ---
+Valid values to send are 02,
+04, 08, 10 and 20, which correspond to a stepping
+delay of 250, 125, 63, 32 and 16 steps per second
+respectively.
+---
+We use these values to change speed_factor to our custom values
+*/
+
+#define DEFAULT_MOONLITE_SPEED 0x08 //the middle value corresponds to a speed factor 1
+
 
 #ifdef MOTORSHIELD
   #include <AFMotor.h>
@@ -61,12 +77,12 @@ char param[MAXCOMMAND];
 char line[MAXCOMMAND];
 long pos = HOME_POSITION;
 int isRunning = 0;
-int speed = DEFAULT_SPEED;
+int moonlite_speed = DEFAULT_MOONLITE_SPEED;
 int eoc = 0;
 int idx = 0;
 long millisLastMove = 0;
 long millisLastTemp = 0;
-bool halfstep = false;
+bool halfstep = HALFSTEP;
 int temperature = 0;
 const int temp_offset = TEMP_OFFSET;
 
@@ -100,13 +116,33 @@ void backwardstep() {
 
 AccelStepper stepper(forwardstep, backwardstep);
 
+float speedFactor() {
+
+  switch(moonlite_speed) {
+
+      case 0x02:
+        return 0.5;
+      case 0x04:
+        return 0.75;
+      case 0x08:
+        return 1.0;
+      case 0x10:
+        return 1.25;
+      case 0x20:
+        return 1.5;
+
+      default:
+        return 1.0;
+
+  }
+}
 
 void setup()
 {  
   Serial.begin(9600);
 
-  stepper.setSpeed(speed*SPEEDMULT);
-  stepper.setMaxSpeed(MAXSPEED);
+  stepper.setSpeed(DEFAULT_STEPPER_SPEED);
+  stepper.setMaxSpeed(MAX_STEPPER_SPEED);
   stepper.setAcceleration(ACCELERATION);
   stepper.enableOutputs();
   stepper.setCurrentPosition(HOME_POSITION);
@@ -260,16 +296,16 @@ void loop(){
     // get the current motor speed, only values of 02, 04, 08, 10, 20
     if (!strcasecmp(cmd, "GD")) {
       char tempString[6];
-      sprintf(tempString, "%02X", speed);
+      sprintf(tempString, "%02X", moonlite_speed);
       Serial.print(tempString);
       Serial.print("#");
     }
 
-    // set speed, only acceptable values are 02, 04, 08, 10, 20
+    // set speed
     if (!strcasecmp(cmd, "SD")) {
-      speed = hexstr2long(param);
-
-      stepper.setSpeed(speed * SPEEDMULT);
+      moonlite_speed = hexstr2long(param);
+      float newspeed = DEFAULT_STEPPER_SPEED*speedFactor();
+      stepper.setSpeed((int)newspeed);
     
     }
       //set half step mode
@@ -334,10 +370,13 @@ void loop(){
 } // end loop
 
 long hexstr2long(char *line) {
+  /*
   long ret = 0;
 
   ret = strtol(line, NULL, 16);
   return (ret);
+  */
+  return (long)(strtoul(line, NULL, 16));
 }
 
 
