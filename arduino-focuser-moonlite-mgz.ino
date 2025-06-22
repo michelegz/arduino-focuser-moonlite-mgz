@@ -120,15 +120,15 @@ float speedFactor() {
 
   switch(moonlite_speed) {
 
-      case 0x02:
-        return 0.5;
-      case 0x04:
+      case 0x20:
+        return 0.25;
+      case 0x10:
         return 0.75;
       case 0x08:
         return 1.0;
-      case 0x10:
+      case 0x04:
         return 1.25;
-      case 0x20:
+      case 0x02:
         return 1.5;
 
       default:
@@ -304,8 +304,28 @@ void loop(){
     // set speed
     if (!strcasecmp(cmd, "SD")) {
       moonlite_speed = hexstr2long(param);
+
+      //Serial.print("_SDPARAM:");
+      //Serial.print(param);
+      //Serial.print("_MOOLITESPEED1:");
+      //Serial.print(moonlite_speed);
+
+    if (moonlite_speed != 0x02 &&
+        moonlite_speed != 0x04 &&
+        moonlite_speed != 0x08 &&
+        moonlite_speed != 0x10 &&
+        moonlite_speed != 0x20) {
+          moonlite_speed = 0x08;  // fallback
+    }
+      
+      //Serial.print("_MOOLITESPEED2:");
+      //Serial.print(moonlite_speed);
+
       float newspeed = DEFAULT_STEPPER_SPEED*speedFactor();
       stepper.setSpeed((int)newspeed);
+
+      //Serial.print("_NEWSPEED:");
+      //Serial.print(newspeed);
     
     }
       //set half step mode
