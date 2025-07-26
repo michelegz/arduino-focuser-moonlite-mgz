@@ -28,7 +28,7 @@
 // CONFIGURATION IS INCLUDED IN EXTERNAL FILE
 //-------------------------------------------------------
 
-#include "config.h"
+#include "config_mega.h"
 
 //------------------------------------------------------------------
 // Don't edit below this line unless you know what you are doing
