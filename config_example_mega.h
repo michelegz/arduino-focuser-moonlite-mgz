@@ -1,13 +1,13 @@
 //choose main configuration between Adafruit compatible v1 MOTORSHIELD or generic HBRIDGE
-//#define MOTORSHIELD
-//#define MOTORSHIELD_STEPS 200
-//#define MOTORSHIELD_NUMBER 2
+#define MOTORSHIELD
+#define MOTORSHIELD_STEPS 200
+#define MOTORSHIELD_NUMBER 2
 
-#define HBRIDGE
-#define HBRDIGE_MOTORPIN1 5
-#define HBRDIGE_MOTORPIN2 6
-#define HBRDIGE_MOTORPIN3 7
-#define HBRDIGE_MOTORPIN4 8
+//#define HBRIDGE
+//#define HBRDIGE_MOTORPIN1 5
+//#define HBRDIGE_MOTORPIN2 6
+//#define HBRDIGE_MOTORPIN3 7
+//#define HBRDIGE_MOTORPIN4 8
 
 //optional PWM for HBRIDGE
 //#define HBRDIGE_PWM_ENABLED
@@ -17,7 +17,7 @@
 
 //use DHT11 temp sensor
 #define DHT11_PRESENT
-#define DHT11_PIN 2
+#define DHT11_PIN 22
 #define TEMP_OFFSET 0
 
 //MAXSPEED limits the maximumum speed
