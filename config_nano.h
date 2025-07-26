@@ -16,7 +16,7 @@
 //#define HBRDIGE_POWERFACTOR 1
 
 //use DHT11 temp sensor
-#define DHT11_PRESENT
+ #define DHT11_PRESENT
 #define DHT11_PIN 2
 #define TEMP_OFFSET 0
 

@@ -28,7 +28,7 @@
 // CONFIGURATION IS INCLUDED IN EXTERNAL FILE
 //-------------------------------------------------------
 
-#include "config_mega.h"
+#include "config_nano.h"
 
 //------------------------------------------------------------------
 // Don't edit below this line unless you know what you are doing
