@@ -21,10 +21,10 @@
 #define TEMP_OFFSET 0
 
 //MAXSPEED limits the maximumum speed
-#define MAX_STEPPER_SPEED 200
-#define DEFAULT_STEPPER_SPEED 100
+#define LIMIT_STEPPER_SPEED 1000 //just for safety, when speed is configured via UI, it will always limited by this value
+#define DEFAULT_STEPPER_SPEED 200
 //selectable speeds will be STEPPER_SPEED*speedFactor()
-#define ACCELERATION 50
+#define ACCELERATION 150
 #define MOTOR_RELEASE_TIMEOUT 1000
 #define HOME_POSITION 32000
 #define HALFSTEP false
