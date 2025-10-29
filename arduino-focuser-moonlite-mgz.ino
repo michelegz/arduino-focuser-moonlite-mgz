@@ -35,6 +35,7 @@
 // Don't edit below this line unless you know what you are doing
 //-------------------------------------------------------------------
 
+#define DEBUG_LOG
 #define MAXCOMMAND 12
 #define READ_TEMP_INTERVAL 60000
 
@@ -58,10 +59,10 @@ We use these values to change speed_factor to our custom values
 
 #ifdef HBRIDGE
   #include "MicStep.h"
-  #ifdef HBRDIGE_PWM_ENABLED
-    Stepper motor(HBRDIGE_MOTORPIN1,HBRDIGE_MOTORPIN2,HBRDIGE_MOTORPIN3,HBRDIGE_MOTORPIN4,HBRDIGE_PWMPIN_A,HBRDIGE_PWMPIN_B,HBRDIGE_POWERFACTOR);
+  #ifdef HBRIDGE_PWM_ENABLED
+    Stepper motor(HBRIDGE_MOTORPIN1,HBRIDGE_MOTORPIN2,HBRIDGE_MOTORPIN3,HBRIDGE_MOTORPIN4,HBRIDGE_PWMPIN_A,HBRIDGE_PWMPIN_B,HBRIDGE_POWERFACTOR);
   #else
-    Stepper motor(HBRDIGE_MOTORPIN1,HBRDIGE_MOTORPIN2,HBRDIGE_MOTORPIN3,HBRDIGE_MOTORPIN4);
+    Stepper motor(HBRIDGE_MOTORPIN1,HBRIDGE_MOTORPIN2,HBRIDGE_MOTORPIN3,HBRIDGE_MOTORPIN4);
   #endif
 #endif
 
@@ -88,8 +89,8 @@ int isRunning = 0;
 int moonlite_speed = DEFAULT_MOONLITE_SPEED;
 int eoc = 0;
 int idx = 0;
-long millisLastMove = 0;
-long millisLastTemp = 0;
+unsigned long millisLastMove = 0;
+unsigned long millisLastTemp = 0;
 bool halfstep = HALFSTEP;
 int temperature = 0;
 const int temp_offset = TEMP_OFFSET;
@@ -148,17 +149,31 @@ float speedFactor() {
   }
 }
 
+void logSerial(String message) {
+
+ #ifdef DEBUG_LOG
+  Serial.print(message);
+#endif
+
+  
+} 
+
 void setup()
 {  
   Serial.begin(9600);
 
     // read and check EEPROM version
-  int eepromVersion = EEPROM.read(EEPROM_VERSION_ADDR);
-  
+  int eepromVersion;
+  EEPROM.get(EEPROM_VERSION_ADDR, eepromVersion);
+
+
+  logSerial(String(eepromVersion));
+
+
   if (eepromVersion == EEPROM_VERSION) {
     // Correct version - read the position
     savedPosition = readPositionFromEEPROM();
-    Serial.println(savedPosition);
+    logSerial(String(savedPosition));
   } else {
     // First run or version mismatch - initialize EEPROM
     initializeEEPROM();
@@ -202,7 +217,10 @@ void loop(){
         // DHT11 temp reading is very slow so we read it during idle time instead of reading it on serial request
         #ifdef DHT11_PRESENT
         if ((millis() - millisLastTemp) > READ_TEMP_INTERVAL) {
-          temperature = dht11.readTemperature() + temp_offset;
+         int t = dht11.readTemperature();
+         if (t != DHT11::ERROR_CHECKSUM && t != DHT11::ERROR_TIMEOUT)
+             temperature = t + temp_offset;
+
           millisLastTemp = millis();
         }
         #endif
@@ -423,7 +441,9 @@ void loop(){
     needsSave = true;
   }
 
-   savePositionSafely(stepper.currentPosition());
+   if (!stepper.isRunning() && needsSave) {
+    savePositionSafely(stepper.currentPosition());
+}
 
 
 } // end loop
