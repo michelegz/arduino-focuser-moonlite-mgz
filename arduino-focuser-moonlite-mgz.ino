@@ -454,8 +454,8 @@ long readPositionFromEEPROM() {
 void savePositionSafely(long position) {
   static long lastSavedPos = HOME_POSITION;
   
-  // save position to EEPROM if needed every 5 minutes and if position changed more than 10 steps
-  if (needsSave && (millis() - lastSaveTime > 30000) && 
+  // save position to EEPROM if needed every 2 minutes and if position changed more than 10 steps
+  if (needsSave && (millis() - lastSaveTime > 120000) && 
       abs(position - lastSavedPos) > 10) {
         
     EEPROM.put(POS_ADDR, position);
