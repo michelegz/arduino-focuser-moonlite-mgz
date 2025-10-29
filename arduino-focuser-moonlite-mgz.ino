@@ -77,7 +77,7 @@ We use these values to change speed_factor to our custom values
 #define EEPROM_VERSION 10
 #define EEPROM_VERSION_ADDR 0
 #define POS_ADDR 4
-#define WRITE_DELAY 10000
+#define WRITE_DELAY 120000 // 2 minutes
 
 char inChar;
 char cmd[MAXCOMMAND];
@@ -455,7 +455,7 @@ void savePositionSafely(long position) {
   static long lastSavedPos = HOME_POSITION;
   
   // save position to EEPROM if needed every 2 minutes and if position changed more than 10 steps
-  if (needsSave && (millis() - lastSaveTime > 120000) && 
+  if (needsSave && (millis() - lastSaveTime > WRITE_DELAY) && 
       abs(position - lastSavedPos) > 10) {
         
     EEPROM.put(POS_ADDR, position);
