@@ -3,14 +3,15 @@
 // Author: michele.gz@gmail.com
 // Based on original work by orly.andico@gmail.com
 //
-// THIS PROJECT IS STILL IN EXPERIMENTAL STAGE, NOT ALL FEATURES HAS BEEN TESTED
+// THIS PROJECT IS STILL IN EXPERIMENTAL STAGE
 //
 // Main enhanchments from original version:
 // - possibility to choose between Motorshield v1 and generic H-Bridge motor
 // - half step implementation
 // - DHT11 temperature support
 // - speed selection from Moonlite GUI
-//
+// - save last position to EEPROM
+// - compatible with Ardufocus ASCOM driver, this allow to avoid the capacitor for easier firmware upload (see note below)
 //
 // Uses AccelStepper (http://www.airspayce.com/mikem/arduino/AccelStepper/)
 // Uses AFMotor and the Adafruit v1.2 Motor Shield https://learn.adafruit.com/adafruit-motor-shield
@@ -34,7 +35,7 @@
 // Don't edit below this line unless you know what you are doing
 //-------------------------------------------------------------------
 
-#define MAXCOMMAND 8
+#define MAXCOMMAND 12
 #define READ_TEMP_INTERVAL 60000
 
 /*
@@ -65,11 +66,18 @@ We use these values to change speed_factor to our custom values
 #endif
 
 #include <AccelStepper.h>
+#include <EEPROM.h>
 
 #ifdef DHT11_PRESENT
   #include <DHT11.h>
   DHT11 dht11(DHT11_PIN);
 #endif
+
+#define EEPROM_SIZE 512
+#define EEPROM_VERSION 10
+#define EEPROM_VERSION_ADDR 0
+#define POS_ADDR 4
+#define WRITE_DELAY 10000
 
 char inChar;
 char cmd[MAXCOMMAND];
@@ -85,6 +93,9 @@ long millisLastTemp = 0;
 bool halfstep = HALFSTEP;
 int temperature = 0;
 const int temp_offset = TEMP_OFFSET;
+unsigned long lastSaveTime = 0;
+bool needsSave = false;
+long savedPosition = HOME_POSITION;
 
 void forwardstep() {  
   #ifdef MOTORSHIELD
@@ -141,11 +152,24 @@ void setup()
 {  
   Serial.begin(9600);
 
+    // read and check EEPROM version
+  int eepromVersion = EEPROM.read(EEPROM_VERSION_ADDR);
+  
+  if (eepromVersion == EEPROM_VERSION) {
+    // Correct version - read the position
+    savedPosition = readPositionFromEEPROM();
+    Serial.println(savedPosition);
+  } else {
+    // First run or version mismatch - initialize EEPROM
+    initializeEEPROM();
+    savedPosition = HOME_POSITION;
+  }
+
   stepper.setSpeed(DEFAULT_STEPPER_SPEED);
   stepper.setMaxSpeed(DEFAULT_STEPPER_SPEED);
   stepper.setAcceleration(ACCELERATION);
   stepper.enableOutputs();
-  stepper.setCurrentPosition(HOME_POSITION);
+  stepper.setCurrentPosition(savedPosition);
 
   memset(line, 0, MAXCOMMAND);
   
@@ -393,6 +417,15 @@ void loop(){
       stepper.stop();
     }
   }
+
+
+  if (stepper.isRunning()) {
+    needsSave = true;
+  }
+
+   savePositionSafely(stepper.currentPosition());
+
+
 } // end loop
 
 long hexstr2long(char *line) {
@@ -403,6 +436,33 @@ long hexstr2long(char *line) {
   return (ret);
   */
   return (long)(strtoul(line, NULL, 16));
+}
+
+void initializeEEPROM() {
+  // save the version
+  EEPROM.put(EEPROM_VERSION_ADDR, EEPROM_VERSION);
+  // save the home position
+  EEPROM.put(POS_ADDR, HOME_POSITION);
+}
+
+long readPositionFromEEPROM() {
+  long value = HOME_POSITION;
+  EEPROM.get(POS_ADDR, value);
+  return value;
+}
+
+void savePositionSafely(long position) {
+  static long lastSavedPos = HOME_POSITION;
+  
+  // save position to EEPROM if needed every 5 minutes and if position changed more than 10 steps
+  if (needsSave && (millis() - lastSaveTime > 30000) && 
+      abs(position - lastSavedPos) > 10) {
+        
+    EEPROM.put(POS_ADDR, position);
+    lastSavedPos = position;
+    needsSave = false;
+    lastSaveTime = millis();
+  }
 }
 
 
