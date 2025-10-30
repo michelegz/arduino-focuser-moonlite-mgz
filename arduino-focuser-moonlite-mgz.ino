@@ -4,8 +4,11 @@
 // Based on original work by orly.andico@gmail.com
 //
 // THIS PROJECT IS STILL IN EXPERIMENTAL STAGE
-//
-// Main enhanchments from original version:
+// This software provided "as is".
+// The author is not responsible for any hardware or software issue.
+// Use at your own risk.
+
+// Main enhancements from original version:
 // - possibility to choose between Motorshield v1 and generic H-Bridge motor
 // - half step implementation
 // - DHT11 temperature support
