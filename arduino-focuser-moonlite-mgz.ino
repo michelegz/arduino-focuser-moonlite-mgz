@@ -1,7 +1,7 @@
 // Moonlite-compatible stepper controller
 //
-// Author: michele.gz@gmail.com
-// Based on original work by orly.andico@gmail.com
+// Author: Michele Guzzini <michele.gz@gmail.com>
+// Based on original work by Orlando Andico <orly.andico@gmail.com>
 //
 // THIS PROJECT IS STILL IN EXPERIMENTAL STAGE
 // This software provided "as is".
