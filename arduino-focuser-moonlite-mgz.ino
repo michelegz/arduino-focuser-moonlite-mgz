@@ -35,7 +35,7 @@
 // Don't edit below this line unless you know what you are doing
 //-------------------------------------------------------------------
 
-#define DEBUG_LOG
+//#define DEBUG_LOG
 #define MAXCOMMAND 12
 #define READ_TEMP_INTERVAL 60000
 
@@ -162,7 +162,9 @@ void setup()
 {  
   Serial.begin(9600);
 
-    // read and check EEPROM version
+  pinMode(PIN_LED, OUTPUT);
+  
+  // read and check EEPROM version
   int eepromVersion;
   EEPROM.get(EEPROM_VERSION_ADDR, eepromVersion);
 
@@ -211,6 +213,7 @@ void loop(){
       // after movement has stopped
       if ((millis() - millisLastMove) > MOTOR_RELEASE_TIMEOUT) {
         stepper.disableOutputs();
+        delay(10);
         motor.release();
       }
 
@@ -408,7 +411,7 @@ void loop(){
     // set current motor position
     if (!strcasecmp(cmd, "SP")) {
       pos = hexstr2long(param);
-
+      pos = clampPosition(pos);
       if(pos==0) pos=HOME_POSITION;
 
       stepper.setCurrentPosition(pos);
@@ -417,6 +420,7 @@ void loop(){
     // set new motor position
     if (!strcasecmp(cmd, "SN")) {
       pos = hexstr2long(param);
+      pos = clampPosition(pos);
       if(pos==0) pos=HOME_POSITION;
       stepper.moveTo(pos);
     }
@@ -433,6 +437,8 @@ void loop(){
      // stepper.moveTo(stepper.currentPosition());
 
       stepper.stop();
+
+      isRunning = 0;
     }
   }
 
@@ -472,18 +478,27 @@ long readPositionFromEEPROM() {
 }
 
 void savePositionSafely(long position) {
-  static long lastSavedPos = HOME_POSITION;
   
+  position = clampPosition(position);
+
   // save position to EEPROM if needed every 2 minutes and if position changed more than 10 steps
   if (needsSave && (millis() - lastSaveTime > WRITE_DELAY) && 
-      abs(position - lastSavedPos) > 10) {
+      abs(position - savedPosition) > 10) {
         
+    digitalWrite(PIN_LED, HIGH); // turn the LED on to indicate EEPROM write
+    delay(25);
     EEPROM.put(POS_ADDR, position);
-    lastSavedPos = position;
+    delay(25); 
+    digitalWrite(PIN_LED, LOW); // turn the LED off after write
+
+    savedPosition = position;
     needsSave = false;
     lastSaveTime = millis();
   }
 }
 
-
-
+long clampPosition(long value) {
+  if (value < 0) value = 0;
+  if (value > 0xFFFF) value = 0xFFFF;
+  return value;
+}

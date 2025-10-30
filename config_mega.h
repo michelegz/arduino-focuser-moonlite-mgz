@@ -1,3 +1,5 @@
+#define PIN_LED 13
+
 //choose main configuration between Adafruit compatible v1 MOTORSHIELD or generic HBRIDGE
 #define MOTORSHIELD
 #define MOTORSHIELD_STEPS 200

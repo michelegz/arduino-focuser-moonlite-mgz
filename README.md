@@ -1,5 +1,8 @@
 # 🌙 Arduino Focuser Moonlite Compatible
 
+[![Work in Progress](https://img.shields.io/badge/status-work%20in%20progress-orange.svg)](https://github.com/your-repo/arduino-focuser-moolite-mgz)
+
+
 A Moonlite-compatible stepper controller for telescopes, based on original work by Orlando Andico, with several enhancements and support for different motor drivers.
 
 ## 🚀 Features
