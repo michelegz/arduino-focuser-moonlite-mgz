@@ -38,7 +38,8 @@
 // Don't edit below this line unless you know what you are doing
 //-------------------------------------------------------------------
 
-//#define DEBUG_LOG
+#define DEBUG_LOG
+#define RESTORE_POSITION_ON_STARTUP //read last position from EEPROM on startup, comment out to always start from HOME_POSITION
 #define MAXCOMMAND 12
 #define READ_TEMP_INTERVAL 60000
 
@@ -70,7 +71,7 @@ We use these values to change speed_factor to our custom values
 #endif
 
 #include <AccelStepper.h>
-#include <EEPROM.h>
+#include <EEPROMex.h>
 
 #ifdef DHT11_PRESENT
   #include <DHT11.h>
@@ -78,10 +79,10 @@ We use these values to change speed_factor to our custom values
 #endif
 
 #define EEPROM_SIZE 512
-#define EEPROM_VERSION 10
+#define EEPROM_VERSION 10 //change this to force re-initialization of EEPROM
 #define EEPROM_VERSION_ADDR 0
 #define POS_ADDR 4
-#define WRITE_DELAY 120000 // 2 minutes
+#define WRITE_DELAY 120000 // delay between eeprom writes
 
 char inChar;
 char cmd[MAXCOMMAND];
@@ -155,7 +156,7 @@ float speedFactor() {
 void logSerial(String message) {
 
  #ifdef DEBUG_LOG
-  Serial.print(message);
+  Serial.println(message);
 #endif
 
   
@@ -165,20 +166,20 @@ void setup()
 {  
   Serial.begin(9600);
 
+  
   pinMode(PIN_LED, OUTPUT);
   
+  EEPROM.setMemPool(0, EEPROM_SIZE);
+
   // read and check EEPROM version
-  int eepromVersion;
-  EEPROM.get(EEPROM_VERSION_ADDR, eepromVersion);
+  int eepromVersion = EEPROM.readInt(EEPROM_VERSION_ADDR);
 
-
-  logSerial(String(eepromVersion));
-
+  logSerial("EEPROM version: " + String(eepromVersion));
 
   if (eepromVersion == EEPROM_VERSION) {
     // Correct version - read the position
     savedPosition = readPositionFromEEPROM();
-    logSerial(String(savedPosition));
+    logSerial("Last saved position: " + String(savedPosition));
   } else {
     // First run or version mismatch - initialize EEPROM
     initializeEEPROM();
@@ -189,7 +190,13 @@ void setup()
   stepper.setMaxSpeed(DEFAULT_STEPPER_SPEED);
   stepper.setAcceleration(ACCELERATION);
   stepper.enableOutputs();
+
+  #ifdef RESTORE_POSITION_ON_STARTUP
   stepper.setCurrentPosition(savedPosition);
+  #else
+  stepper.setCurrentPosition(HOME_POSITION);
+  #endif
+
 
   memset(line, 0, MAXCOMMAND);
   
@@ -469,14 +476,14 @@ long hexstr2long(char *line) {
 
 void initializeEEPROM() {
   // save the version
-  EEPROM.put(EEPROM_VERSION_ADDR, EEPROM_VERSION);
+  EEPROM.updateInt(EEPROM_VERSION_ADDR, EEPROM_VERSION);
   // save the home position
-  EEPROM.put(POS_ADDR, HOME_POSITION);
+  EEPROM.updateLong(POS_ADDR, HOME_POSITION);
 }
 
 long readPositionFromEEPROM() {
   long value = HOME_POSITION;
-  EEPROM.get(POS_ADDR, value);
+  value = EEPROM.readLong(POS_ADDR);
   return value;
 }
 
@@ -490,7 +497,7 @@ void savePositionSafely(long position) {
         
     digitalWrite(PIN_LED, HIGH); // turn the LED on to indicate EEPROM write
     delay(25);
-    EEPROM.put(POS_ADDR, position);
+    EEPROM.updateLong(POS_ADDR, position);
     delay(25); 
     digitalWrite(PIN_LED, LOW); // turn the LED off after write
 
