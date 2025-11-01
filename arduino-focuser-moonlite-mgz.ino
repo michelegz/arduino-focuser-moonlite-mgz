@@ -38,7 +38,7 @@
 // Don't edit below this line unless you know what you are doing
 //-------------------------------------------------------------------
 
-#define DEBUG_LOG
+//#define DEBUG_LOG
 #define RESTORE_POSITION_ON_STARTUP //read last position from EEPROM on startup, comment out to always start from HOME_POSITION
 #define MAXCOMMAND 12
 #define READ_TEMP_INTERVAL 60000
